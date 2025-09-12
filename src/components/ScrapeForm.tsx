@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Search, MapPin, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Google Maps Scraper Form Component
 const ScrapeForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [location, setLocation] = useState("");
