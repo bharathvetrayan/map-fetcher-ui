@@ -4,22 +4,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, MapPin, Play } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ScrapeForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [location, setLocation] = useState("");
   const [leadCount, setLeadCount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ searchTerm: false, location: false, leadCount: false });
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Reset errors
+    setErrors({ searchTerm: false, location: false, leadCount: false });
+    
+    // Validate all fields are filled
+    const newErrors = {
+      searchTerm: !searchTerm.trim(),
+      location: !location.trim(),
+      leadCount: !leadCount.trim()
+    };
+    
+    if (newErrors.searchTerm || newErrors.location || newErrors.leadCount) {
+      setErrors(newErrors);
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Please fill in all required fields."
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    // Simulate API call - replace with actual backend call later
-    setTimeout(() => {
-      console.log("Scraping started:", { searchTerm, location, leadCount });
+    try {
+      const response = await fetch("http://localhost:5678/webhook-test/34db0692-d5a5-47eb-92b0-e3b6fd159e1d", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          searchTerm,
+          location,
+          leadCount: parseInt(leadCount)
+        }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Scraping process has been started."
+        });
+        console.log("Webhook sent successfully:", { searchTerm, location, leadCount });
+      } else {
+        throw new Error("Failed to send webhook");
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start scraping process. Please try again."
+      });
+      console.error("Error sending webhook:", error);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -49,7 +100,7 @@ const ScrapeForm = () => {
                   placeholder="e.g., restaurants, plumbers, hotels"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-11"
+                  className={`pl-10 h-11 ${errors.searchTerm ? 'border-destructive' : ''}`}
                   required
                 />
               </div>
@@ -67,7 +118,7 @@ const ScrapeForm = () => {
                   placeholder="e.g., New York, London, Tokyo"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="pl-10 h-11"
+                  className={`pl-10 h-11 ${errors.location ? 'border-destructive' : ''}`}
                   required
                 />
               </div>
@@ -83,7 +134,7 @@ const ScrapeForm = () => {
                 placeholder="e.g., 50, 100, 200"
                 value={leadCount}
                 onChange={(e) => setLeadCount(e.target.value)}
-                className="h-11"
+                className={`h-11 ${errors.leadCount ? 'border-destructive' : ''}`}
                 required
                 min="1"
               />
