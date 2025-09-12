@@ -8,6 +8,7 @@ import { Search, MapPin, Play } from "lucide-react";
 const ScrapeForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [location, setLocation] = useState("");
+  const [leadCount, setLeadCount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,7 +17,7 @@ const ScrapeForm = () => {
     
     // Simulate API call - replace with actual backend call later
     setTimeout(() => {
-      console.log("Scraping started:", { searchTerm, location });
+      console.log("Scraping started:", { searchTerm, location, leadCount });
       setIsLoading(false);
     }, 2000);
   };
@@ -72,7 +73,23 @@ const ScrapeForm = () => {
               </div>
             </div>
 
-            <Button 
+            <div className="space-y-2">
+              <Label htmlFor="leadCount" className="text-sm font-medium">
+                Lead Count
+              </Label>
+              <Input
+                id="leadCount"
+                type="number"
+                placeholder="e.g., 50, 100, 200"
+                value={leadCount}
+                onChange={(e) => setLeadCount(e.target.value)}
+                className="h-11"
+                required
+                min="1"
+              />
+            </div>
+
+            <Button
               type="submit" 
               className="w-full h-11 bg-gradient-primary hover:opacity-90 transition-all duration-200"
               disabled={isLoading}
