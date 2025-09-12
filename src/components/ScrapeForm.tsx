@@ -61,8 +61,8 @@ const ScrapeForm = () => {
         const data = await response.json();
         
         // Check if we have a Google Sheets URL in the response
-        if (data.googlesheets) {
-          setGoogleSheetsUrl(data.googlesheets);
+        if (data.googleSheet) {
+          setGoogleSheetsUrl(data.googleSheet);
           setStatus("completed");
           toast({
             title: "Success!",
