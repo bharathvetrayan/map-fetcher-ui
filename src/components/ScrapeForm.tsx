@@ -10,12 +10,16 @@ const ScrapeForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [location, setLocation] = useState("");
   const [leadCount, setLeadCount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "in-progress" | "completed">("idle");
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState("");
   const [errors, setErrors] = useState({ searchTerm: false, location: false, leadCount: false });
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Don't submit if already in progress or completed
+    if (status !== "idle") return;
     
     // Reset errors
     setErrors({ searchTerm: false, location: false, leadCount: false });
@@ -37,7 +41,7 @@ const ScrapeForm = () => {
       return;
     }
     
-    setIsLoading(true);
+    setStatus("in-progress");
     
     try {
       const response = await fetch("http://localhost:5678/webhook-test/34db0692-d5a5-47eb-92b0-e3b6fd159e1d", {
@@ -53,23 +57,41 @@ const ScrapeForm = () => {
       });
       
       if (response.ok) {
-        toast({
-          title: "Success!",
-          description: "Scraping process has been started."
-        });
+        const data = await response.json();
+        
+        // Check if we have a Google Sheets URL in the response
+        if (data.googlesheets) {
+          setGoogleSheetsUrl(data.googlesheets);
+          setStatus("completed");
+          toast({
+            title: "Success!",
+            description: "Leads have been scraped and are ready to view."
+          });
+        } else {
+          setStatus("completed");
+          toast({
+            title: "Success!",
+            description: "Scraping process completed."
+          });
+        }
         console.log("Webhook sent successfully:", { searchTerm, location, leadCount });
       } else {
         throw new Error("Failed to send webhook");
       }
     } catch (error) {
+      setStatus("idle");
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to start scraping process. Please try again."
       });
       console.error("Error sending webhook:", error);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const handleViewLeads = () => {
+    if (googleSheetsUrl) {
+      window.open(googleSheetsUrl, '_blank');
     }
   };
 
@@ -141,14 +163,20 @@ const ScrapeForm = () => {
             </div>
 
             <Button
-              type="submit" 
+              type={status === "completed" && googleSheetsUrl ? "button" : "submit"}
+              onClick={status === "completed" && googleSheetsUrl ? handleViewLeads : undefined}
               className="w-full h-11 bg-gradient-primary hover:opacity-90 transition-all duration-200"
-              disabled={isLoading}
+              disabled={status === "in-progress"}
             >
-              {isLoading ? (
+              {status === "in-progress" ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Processing...
+                  In Progress...
+                </>
+              ) : status === "completed" && googleSheetsUrl ? (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  View Leads
                 </>
               ) : (
                 <>
